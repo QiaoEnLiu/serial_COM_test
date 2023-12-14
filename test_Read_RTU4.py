@@ -23,7 +23,7 @@ else:
 # COM3 的串列埠設定
 serial_settings = {
     'port': port_name,
-    'baudrate': 19200,
+    'baudrate': 9600,
     'bytesize': 8,
     'parity': 'N',
     'stopbits': 1,
