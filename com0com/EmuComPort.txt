@@ -1,0 +1,52 @@
+https://sourceforge.net/projects/com0com/
+
+
+use Ports class, O
+emulate baud rate, O
+enable buffer overrun, O
+enable plug-in mode, X
+enable exclusive mode, X
+enable hiddenmode, X
+
+我目前有個python要讀取modbus RTU的模擬數據，他需要透過COM Port連接，但本機端只有COM1，所以我使用com0com新增虛擬COM3；modbus RTU可以偵測得到COM3，也可以開啟，但執行Python時就出現下列狀況：
+raise SerialException("could not open port {!r}: {!r}".format(self.portstr, ctypes.WinError()))
+serial.serialutil.SerialException: could not open port 'COM3': PermissionError(13, '存取被拒。', None, 5)
+
+
+
+Get-WmiObject Win32_SerialPort | Select-Object DeviceID, Name, Caption
+
+##########################
+# 檢查防火牆是否啟用
+$firewallStatus = Get-Service -Name 'MpsSvc' | Select-Object -ExpandProperty Status
+
+if ($firewallStatus -eq 'Running') {
+    Write-Host "Windows Firewall is running."
+    
+    # 檢查 COM 埠是否被防火牆擋掉，替換 1234 為你的 COM 埠數字
+    $portNumber = 1234
+    $portBlocked = Test-NetConnection -ComputerName 'localhost' -Port $portNumber -InformationLevel 'Detailed' | Select-Object -ExpandProperty TcpTestSucceeded
+
+    if ($portBlocked) {
+        Write-Host "COM port is accessible."
+    } else {
+        Write-Host "COM port is blocked by the firewall."
+    }
+} else {
+    Write-Host "Windows Firewall is not running."
+}
+
+##########################
+
+
+# 查詢具有防火牆功能的程式
+Get-NetFirewallApplicationFilter | Select-Object Program
+
+# 如果想要顯示更多詳細資訊，可以使用以下命令
+Get-NetFirewallApplicationFilter | Select-Object -Property Program, LocalAddress, LocalPort, RemoteAddress, RemotePort
+
+Get-NetFirewallRule | Select-Object DisplayName, Action, Direction, Protocol, LocalPort | Where-Object { $_.LocalPort -eq 'COM3' }
+
+Get-NetFirewallRule | Where-Object { $_.Direction -eq 'Inbound' -and $_.Protocol -eq 'TCP' -and $_.LocalPort -eq 'COM3' } | Select-Object DisplayName, Action, Direction, Protocol, LocalPort
+
+
