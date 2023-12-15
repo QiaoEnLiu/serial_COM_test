@@ -4,7 +4,7 @@ from pymodbus.server import StartSerialServer
 from pymodbus.device import ModbusDeviceIdentification
 
 # COM埠設定
-com_port = 'COM3'  # 這裡的COM3是示例，請更改為你實際使用的COM埠
+com_port = 'COM4'  # 這裡的COM3是示例，請更改為你實際使用的COM埠
 baud_rate = 9600
 
 # 啟動 Modbus RTU Serial Server
