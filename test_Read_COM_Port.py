@@ -1,7 +1,6 @@
 #先透過RTU成功開啟COM3，然後在Python用COM4讀取，COM埠交換也可以，誰先開啟不影響，但這兩個COM埠必需為成對關系。
 
-#zh-tw 此程式碼在RTU執行Read R4x Register(F3)時，可以偵測到\x01\x03\x00\x01\x00\x1d\xd4\x03，而我要增加的功能是當RTU執行Read R4x Register(F3)時，不只偵測到\x01\x03\x00\x01\x00\x1d\xd4\x03，還要顯示400001。
-
+#zh-tw
 import serial
 
 # COM埠設定
