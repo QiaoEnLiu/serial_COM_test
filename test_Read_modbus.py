@@ -1,47 +1,22 @@
-#zh-tw
-from pymodbus.client import ModbusSerialClient as ModbusClient
-from pymodbus.payload import BinaryPayloadDecoder
-from pymodbus.exceptions import ModbusException
-import traceback
+#zh-tw 
 
-# COM埠設定
-ser_port = 'COM4'  # 這裡的COM4是示例，請更改為你實際使用的COM埠
-baud_rate = 9600
-timeout = 1
+import minimalmodbus
 
-# 建立 Modbus RTU client
-modbus_client = ModbusClient(method='rtu', port=ser_port, baudrate=baud_rate, timeout=timeout)
-modbus_client.connect()
+# 定義Modbus裝置的串口及地址
+instrument = minimalmodbus.Instrument('COM4', 0)  # 第一個參數是串口，第二個參數是Modbus地址
 
-try:
-    # 使用 Modbus RTU client 進行讀取操作
-    result = modbus_client.read_holding_registers(4001, 1, unit=0x01)
+# 設定串口波特率，Parity和Stop bits（這些參數需與Modbus設備一致）
+instrument.serial.baudrate = 9600
+instrument.serial.parity = minimalmodbus.serial.PARITY_NONE
+instrument.serial.stopbits = 1
 
-    if not result.isError():
-        
-        decoder = BinaryPayloadDecoder.fromRegisters(result.registers, byteorder='big')
-        temperature_unit_code = decoder.decode_16bit_uint()
+# 讀取保持寄存器（holding register）中的數據，地址為1
+register_address = 0
 
-        if temperature_unit_code == 0:
-            temperature_unit = 'Celsius'
-        elif temperature_unit_code == 1:
-            temperature_unit = 'Fahrenheit'
-        else:
-            temperature_unit = 'Unknown'
-        print(f"Temperature Unit (4001): {temperature_unit}")
-    else:
-        print('Error:',result.isError())
-        print("Failed to read Temperature Unit (4001)")
-
-except KeyboardInterrupt:
-    # 當使用者按下Ctrl+C時結束
-    print('Exiting...')
-    modbus_client.close()
-
-except Exception as e:
-    print(f"Exception: {e}")
-    traceback.print_exc()
-
-finally:
-    modbus_client.close()  # 關閉 Modbus RTU 通信
-    print('Modbus RTU client closed')
+# 逐個設備進行讀取
+for device_address in range(0, 248):  # Modbus 地址通常在 1 到 247 之間
+    try:
+        value_read = instrument.read_register(register_address, functioncode=16)
+        print(f"成功讀取設備 {device_address} 的數據：{value_read}")
+    except Exception as e:
+        print(f"讀取設備 {device_address} 時發生錯誤：{e}")
