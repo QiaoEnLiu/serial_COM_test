@@ -32,17 +32,18 @@ try:
     print('Before StartSerialServer')
     # 使用 Twisted 框架的 reactor 啟動 Modbus RTU Server
     factory = StartSerialServer(context=context, framer=ModbusRtuFramer)
+    print('Pass0')
     internet.reactor.listenSerial(port=ser_port, baudrate=baud_rate, bytesize=data_bits, parity=parity, stopbits=stop_bits, factory=factory)
     internet.reactor.run()
 
     print('After StartSerialServer')
-    print('Pass0')
+    print('Pass1')
 
     # 使用 Modbus RTU client 進行讀取操作
     result = context[0].getValues(3, reg_address, count=1, unit=0x00)
-    print('Pass1')
-    decoder = BinaryPayloadDecoder.fromRegisters(result, byteorder='big')
     print('Pass2')
+    decoder = BinaryPayloadDecoder.fromRegisters(result, byteorder='big')
+    print('Pass3')
     temperature_unit_code = decoder.decode_16bit_uint()
 
     if temperature_unit_code == 0:
@@ -59,7 +60,7 @@ except KeyboardInterrupt:
     internet.reactor.stop()
 
 except Exception as e:
-    print(f"Exception: {e}")
+    print(f"Exception: {type(e)} - {e}")
     traceback.print_exc()
 
 finally:

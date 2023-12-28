@@ -20,7 +20,7 @@ try:
         # 使用write_register()方法寫入數據
         instrument.write_register(register_address, value_to_write, functioncode=6)
 
-        print(f"寫入數據成功，地址：{register_address}，數值：{value_to_write}")
+        print(f"Writing Success，地址：{register_address}，數值：{value_to_write}")
     
 except KeyboardInterrupt:
     # 當使用者按下Ctrl+C時結束

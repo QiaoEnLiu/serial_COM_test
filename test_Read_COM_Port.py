@@ -15,9 +15,9 @@ try:
     while True:
         # 讀取COM埠數據
         data = ser.readline()
-        
-        # 顯示讀取到的數據
-        print(f'Received data: {data}')
+        if data:
+            # 顯示讀取到的數據
+            print(f'Received data: {data}')
 
 
 except serial.SerialException as e:
