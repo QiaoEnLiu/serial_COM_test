@@ -1,6 +1,11 @@
-#先透過RTU成功開啟COM3，然後在Python用COM4讀取，COM埠交換也可以，誰先開啟不影響，但這兩個COM埠必需為成對關系。
-
 #zh-tw
+# 先透過RTU成功開啟COM3，然後在Python用COM4讀取，COM埠交換也可以，誰先開啟不影響，但這兩個COM埠必需為成對關系。
+
+"""
+b'\x01\x06\x00\x01\x00\x00\xd8\n'
+                ^       ^
+             4001位址 傳輸值
+"""
 import serial
 
 # COM埠設定
