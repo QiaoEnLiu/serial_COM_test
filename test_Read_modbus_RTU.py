@@ -28,7 +28,7 @@ instrument.serial.timeout = 5  # 1秒的超時
 try:
     while True:
         # 讀取Modbus暫存寄存器（Read from Holding Register）
-        register_address = 0x01
+        register_address = 4001
 
         # # 等待一些時間，模擬寫入數據
         # time.sleep(5)
