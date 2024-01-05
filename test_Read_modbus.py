@@ -14,7 +14,7 @@ instrument.serial.stopbits = 1
 register_address = 3
 
 # 逐個設備進行讀取
-for device_address in range(0, 248):  # Modbus 地址通常在 1 到 247 之間
+for device_address in range(0, 256):  # Modbus 地址通常在 1 到 247 之間
     try:
         value_read = instrument.read_register(register_address, functioncode=4)
         print(f"成功讀取設備 {device_address} 的數據：{value_read}")

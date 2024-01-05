@@ -10,15 +10,14 @@ try:
     instrument.serial.parity = minimalmodbus.serial.PARITY_NONE
     instrument.serial.stopbits = 1
 
-    # register_address=0
-
     while True:
 
         # 寫入保持寄存器（holding register）中的數據，地址為40001
-        register_address=int(input('Input Address: '))
+        # register_address=int(input('Input Address: '))
+        register_address=2
         value_to_write=int(input('Input Value: '))
         # 使用write_register()方法寫入數據
-        instrument.write_register(register_address, value_to_write, functioncode=6)
+        instrument.write_register(registeraddress=register_address, value=value_to_write, functioncode=6)
 
         print(f"Writing Success，地址：{register_address}，數值：{value_to_write}")
     

@@ -14,7 +14,7 @@ stop_bits = 1  # 1 表示 One Stop Bit
 parity = 'N'
 timeout = 5
 
-reg_address = 0
+reg_address = 2
 
 # 創建 Modbus Server 的資料存儲
 hr = ModbusSequentialDataBlock(0, [0] * 100)

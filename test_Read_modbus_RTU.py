@@ -13,10 +13,10 @@ import minimalmodbus, time, traceback
 # 定義Modbus裝置的串口通訊埠和地址
 # 請根據實際情況更改這些參數
 PORT = 'COM4'  # 更改為你的串口通訊埠
-ADDRESS = 1  # 更改為你的Modbus裝置地址
+ADDRESS = 2  # 更改為你的Modbus裝置地址
 
 # 創建ModbusInstrument物件
-instrument = minimalmodbus.Instrument(PORT, ADDRESS, mode=minimalmodbus.MODE_RTU)
+instrument = minimalmodbus.Instrument(port=PORT, slaveaddress=ADDRESS, mode=minimalmodbus.MODE_RTU)
 
 # 設置通訊參數（波特率、奇偶校驗等）
 instrument.serial.baudrate = 9600
@@ -28,12 +28,12 @@ instrument.serial.timeout = 5  # 1秒的超時
 try:
     while True:
         # 讀取Modbus暫存寄存器（Read from Holding Register）
-        register_address = 4001
+        register_address = 0
 
         # # 等待一些時間，模擬寫入數據
         # time.sleep(5)
 
-        read_value = instrument.read_register(register_address,functioncode=3, signed=True)
+        read_value = instrument.read_register(registeraddress=register_address,functioncode=3, signed=True)
         print(f"Read value from register {register_address}: {read_value}")
 
 # except serial.SerialException as e:
