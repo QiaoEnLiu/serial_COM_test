@@ -1,5 +1,3 @@
-#zh-tw 
-
 import minimalmodbus, traceback, time
 
 try:
@@ -18,9 +16,13 @@ try:
 
         try:
             time.sleep(1)
-            # 使用read_float()方法讀取數據
-            value_read_float = instrument.read_float(register_address) #functioncode = 3 or 4
-            print(f"成功讀取浮點數值：{round(value_read_float,2)}")
+            if register_address == 0:
+                value_read = instrument.read_register(register_address)
+                print(f"成功讀取浮點數值：{value_read}")
+            elif register_address == 1:
+                # 使用read_float()方法讀取數據
+                value_read = instrument.read_float(register_address) #functioncode = 3 or 4
+                print(f"成功讀取浮點數值：{round(value_read,2)}")
         except minimalmodbus.NoResponseError as e:
             print(f"No response from the instrument: {e}")
             traceback.print_exc()
