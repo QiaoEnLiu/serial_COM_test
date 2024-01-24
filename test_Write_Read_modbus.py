@@ -1,4 +1,4 @@
-#zh-tw 你可以把讀取程式碼建立成類似下列這種嗎？
+#zh-tw
 import minimalmodbus, traceback, time
 
 address=[0,2,4,6]
@@ -13,8 +13,6 @@ try:
     instrument.serial.parity = minimalmodbus.serial.PARITY_NONE
     instrument.serial.stopbits = 1
 
-    
-
     while True:
         time.sleep(0.5)
         try:
@@ -26,8 +24,7 @@ try:
         except minimalmodbus.NoResponseError as e:
             print(f"No response from the instrument: {e}")
             traceback.print_exc()
-        
-            
+                
         register_address=int(input('Input Address: '))
         value_to_write=round(float(input('Input Value: ')),2)
 
