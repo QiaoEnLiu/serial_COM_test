@@ -20,7 +20,7 @@ try:
         #                           functioncode=6)
 
         try:
-            time.sleep(1)
+            time.sleep(0.5)
 
             # # 使用write_register()方法寫入整數數據
             # instrument.write_register(registeraddress=register_address, value = value_to_write,
@@ -29,7 +29,7 @@ try:
             # 使用write_float()方法寫入浮點數數據
             instrument.write_float(register_address, value_to_write) #functioncode=6 or 16
             print(f"Writing Success，地址：{register_address}，數值：{value_to_write}")
-            time.sleep(1)
+            time.sleep(0.5)
         except minimalmodbus.NoResponseError as e:
             print(f"No response from the instrument: {e}")
             traceback.print_exc()

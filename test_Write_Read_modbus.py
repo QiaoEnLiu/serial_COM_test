@@ -1,6 +1,7 @@
-#zh-tw 
-
+#zh-tw 你可以把讀取程式碼建立成類似下列這種嗎？
 import minimalmodbus, traceback, time
+
+address=[0,2,4,6]
 
 try:
     # 定義Modbus裝置的串口及地址
@@ -12,20 +13,35 @@ try:
     instrument.serial.parity = minimalmodbus.serial.PARITY_NONE
     instrument.serial.stopbits = 1
 
+    
+
     while True:
-        # 讀取浮點數值，地址為1
-        register_address = int(input('Input Address: '))
+        time.sleep(0.5)
+        try:
+            
+            for i in address:
+                value_read_float = instrument.read_float(i)
+                print(f'Slaver Address {i}:',round(value_read_float,2))
+
+        except minimalmodbus.NoResponseError as e:
+            print(f"No response from the instrument: {e}")
+            traceback.print_exc()
+        
+            
+        register_address=int(input('Input Address: '))
+        value_to_write=round(float(input('Input Value: ')),2)
+
 
         try:
             time.sleep(0.5)
-            # 使用read_float()方法讀取數據
-            value_read_float = instrument.read_float(register_address) #functioncode = 3 or 4
-            print(f"成功讀取浮點數值：{round(value_read_float,2)}")
+
+            instrument.write_float(register_address, value_to_write)
+            print(f"Writing Success，地址：{register_address}，數值：{value_to_write}")
+            time.sleep(0.5)
         except minimalmodbus.NoResponseError as e:
             print(f"No response from the instrument: {e}")
             traceback.print_exc()
 
-        time.sleep(0.5)
     
 except KeyboardInterrupt:
     # 當使用者按下Ctrl+C時結束
@@ -36,6 +52,5 @@ except Exception as e:
     traceback.print_exc()
 
 finally:
-    # 確保在程式退出時串口被正確關閉
     instrument.serial.close()
     print('Closed')
