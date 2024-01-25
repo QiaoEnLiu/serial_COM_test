@@ -3,18 +3,18 @@ import minimalmodbus
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton
 from PyQt5.QtCore import QTimer, Qt
 
+# 初始化 Modbus 裝置
+instrument = minimalmodbus.Instrument('COM4', 1)
+instrument.serial.baudrate = 9600
+instrument.serial.parity = minimalmodbus.serial.PARITY_NONE
+instrument.serial.stopbits = 1
+
 class ModbusReaderApp(QWidget):
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle('Modbus Reader')
         self.setGeometry(100, 100, 750, 250)
-
-        # 初始化 Modbus 裝置
-        self.instrument = minimalmodbus.Instrument('COM4', 1)
-        self.instrument.serial.baudrate = 9600
-        self.instrument.serial.parity = minimalmodbus.serial.PARITY_NONE
-        self.instrument.serial.stopbits = 1
 
         # 創建 QLabel 用於顯示 Modbus 數據
         self.label = QLabel('Modbus Value: N/A', self)
@@ -46,7 +46,7 @@ class ModbusReaderApp(QWidget):
         try:
             # 讀取浮點數值，地址為1
             register_address = 2
-            value_read_float = self.instrument.read_float(register_address)
+            value_read_float = instrument.read_float(register_address)
             # self.label.setText(f'Modbus Value: {round(value_read_float, 2)}')
             self.label.setText(f'Modbus Value: {value_read_float:.2f}')
             print(f'Modbus Value: {value_read_float:.2f}')
@@ -61,7 +61,7 @@ class ModbusReaderApp(QWidget):
             value_to_send = float(self.input_line_edit.text())
             # 寫入 Modbus 設備，地址為2（假設這是 Slaver 接收數據的地址）
             register_address = 2
-            self.instrument.write_float(register_address, value_to_send)
+            instrument.write_float(register_address, value_to_send)
             print(f'Successfully sent value to Slaver: {value_to_send}')
         except ValueError:
             print('Invalid input. Please enter a valid float value.')
