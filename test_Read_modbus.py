@@ -14,7 +14,8 @@ try:
 
     while True:
         # 讀取浮點數值，地址為1
-        register_address = int(input('Input Address: '))
+        # register_address = int(input('Input Address: '))
+        register_address = 2
 
         try:
             time.sleep(0.5)
