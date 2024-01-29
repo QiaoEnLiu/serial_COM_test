@@ -1,6 +1,6 @@
 #zh-tw 
 import minimalmodbus
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QTextEdit
 from PyQt5.QtCore import QTimer, Qt
 
 # 初始化 Modbus 裝置
@@ -8,13 +8,14 @@ instrument = minimalmodbus.Instrument('COM4', 1)
 instrument.serial.baudrate = 9600
 instrument.serial.parity = minimalmodbus.serial.PARITY_NONE
 instrument.serial.stopbits = 1
+instrument.serial.timeout = 1.0 # 設定串口通信的超時時間，單位是秒
 
 class ModbusReaderApp(QWidget):
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle('Modbus Reader')
-        self.setGeometry(100, 100, 750, 250)
+        self.setGeometry(100, 100, 1080, 750)
 
         # 創建 QLabel 用於顯示 Modbus 數據
         self.label = QLabel('Modbus Value: N/A', self)
@@ -30,12 +31,16 @@ class ModbusReaderApp(QWidget):
         self.send_button = QPushButton('Send to Slaver', self)
         self.send_button.clicked.connect(self.send_value_to_slaver)
         self.send_button.setStyleSheet("font-size: 36px;")
+        
+        self.text_edit=QTextEdit(self)
+        self.text_edit.setStyleSheet("font-size: 24px;")
 
         # 設置布局
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         layout.addWidget(self.input_line_edit)
         layout.addWidget(self.send_button)
+        layout.addWidget(self.text_edit)
 
         # 使用 QTimer 定期更新 Modbus 數據
         self.timer = QTimer(self)
@@ -50,10 +55,13 @@ class ModbusReaderApp(QWidget):
             # self.label.setText(f'Modbus Value: {round(value_read_float, 2)}')
             self.label.setText(f'Modbus Value: {value_read_float:.2f}')
             print(f'Modbus Value: {value_read_float:.2f}')
+            self.message_text(f'Modbus Value: {value_read_float:.2f}')
         except minimalmodbus.NoResponseError as e:
-            print(f'No response from the instrument: {e}')
+            print(f'(Reading Error) No response from the instrument: {e}')
+            self.message_text(f'(Reading Error) No response from the instrument: {e}')
         except Exception as e:
-            print(f'Exception: {e}')
+            print(f'(Reading Error) Exception: {e}')
+            self.message_text(f'(Reading Error) Exception: {e}')
 
     def send_value_to_slaver(self):
         try:
@@ -63,12 +71,21 @@ class ModbusReaderApp(QWidget):
             register_address = 2
             instrument.write_float(register_address, value_to_send)
             print(f'Successfully sent value to Slaver: {value_to_send}')
+            self.message_text(f'Successfully sent value to Slaver: {value_to_send}')
         except ValueError:
             print('Invalid input. Please enter a valid float value.')
+            self.message_text('Invalid input. Please enter a valid float value.')
         except minimalmodbus.NoResponseError as e:
-            print(f'No response from the instrument: {e}')
+            print(f'(Writing Error) No response from the instrument: {e}')
+            self.message_text(f'(Writing Error) No response from the instrument: {e}')
         except Exception as e:
-            print(f'Exception: {e}')
+            print(f'(Writing Error) Exception: {e}')
+            self.message_text(f'(Writing Error) Exception: {e}')
+
+
+    def message_text(self,text):
+        self.text_edit.append(text)
+
 
 if __name__ == '__main__':
     app = QApplication([])
