@@ -59,7 +59,7 @@ R3X_Mapping={0:'Gas',
              15:'',
              16:'Read BAT',
              17:'Read BAT %',
-             18:'Read Valid Form Calibration',
+             18:'Read Valid (Calibration)',
              19:'Read Pooling cnt',
              20:'Read Current %'
              }

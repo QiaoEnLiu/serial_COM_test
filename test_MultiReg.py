@@ -1,11 +1,10 @@
 import sys
 import ProjectPublicVariable as PPV
-from PyQt5.QtWidgets import QApplication, QLabel, QGridLayout, QLineEdit,QWidget,QPushButton
+from PyQt5.QtWidgets import QApplication, QLabel, QGridLayout, QLineEdit,QWidget,QPushButton,QDesktopWidget
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
 font=QFont()
-font.setPointSize(18)
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -14,6 +13,20 @@ class MainWindow(QWidget):
         self.initUI()
 
     def initUI(self):
+
+        # 取得螢幕解析度
+        screen_resolution = QDesktopWidget().screenGeometry()
+        screen_width, screen_height = screen_resolution.width(), screen_resolution.height()
+
+        self.setFixedSize(480, 800)
+        font.setPointSize(10)
+        # 如果解析度為1920*1080，則全螢幕，否則使用固定解析度
+        # if screen_width == 480 and screen_height == 800:
+        #     font.setPointSize(10)
+        #     self.showFullScreen()
+        # else:
+        #     font.setPointSize(24)
+        #     self.setFixedSize(1920, 1080)
 
         mainLayout = QGridLayout()
 
@@ -31,7 +44,7 @@ class MainWindow(QWidget):
             if defind =='':
                 dataLabel=QLabel(defind)
             else:
-                dataLabel=QLabel('0')
+                dataLabel=QLabel('1000.00')
 
             defLabel.setFont(font)
             defLabel.setStyleSheet("background-color: pink;")
@@ -58,7 +71,7 @@ class MainWindow(QWidget):
             if defind =='':
                 dataLabel=QLabel(defind)
             else:
-                dataLabel=QLabel('0')
+                dataLabel=QLabel('1000.00')
 
             defLabel.setFont(font)
             defLabel.setStyleSheet("background-color: lightgreen;")
@@ -76,14 +89,14 @@ class MainWindow(QWidget):
 
         reg4_title=QLabel('R4X')
         reg4_title.setFont(font)
-        mainLayout.addWidget(reg4_title, 0 ,3)
+        mainLayout.addWidget(reg4_title, 0 ,2)
         for key,value in PPV.R4X_Mapping.items():
             defind=value
             defLabel=QLabel(defind)
             if defind =='':
                 dataLabel=QLabel(defind)
             else:
-                dataLabel=QLabel('0')
+                dataLabel=QLabel('1000.00')
                 inputBox=QLineEdit()
                 send=QPushButton('Write')
 
@@ -94,10 +107,10 @@ class MainWindow(QWidget):
             inputBox.setFont(font)
             send.setFont(font)
 
-            mainLayout.addWidget(defLabel, key + 1, 3)
-            mainLayout.addWidget(dataLabel, key + 1, 4)
-            mainLayout.addWidget(inputBox, key + 1, 5)
-            mainLayout.addWidget(send, key + 1, 6)
+            mainLayout.addWidget(defLabel, key + 1, 2)
+            mainLayout.addWidget(dataLabel, key + 1, 3)
+            mainLayout.addWidget(inputBox, key + 1, 4)
+            mainLayout.addWidget(send, key + 1, 5)
 
             defLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             dataLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
@@ -110,14 +123,13 @@ class MainWindow(QWidget):
         mainLayout.setColumnStretch(1 ,1)
         mainLayout.setColumnStretch(2 ,1)
         mainLayout.setColumnStretch(3 ,1)
-        mainLayout.setColumnStretch(4 ,1)
+        # mainLayout.setColumnStretch(4 ,1)
         # mainLayout.setColumnStretch(5 ,1)
         # mainLayout.setColumnStretch(6 ,1)
 
         self.setLayout(mainLayout)
 
         self.setWindowTitle('PyQt5 Modbus Multi Reg')
-        self.setFixedSize(1080, 1080)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
