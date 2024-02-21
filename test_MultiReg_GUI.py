@@ -1,8 +1,9 @@
-import sys
+import sys, minimalmodbus, threading
 import ProjectPublicVariable as PPV
 from PyQt5.QtWidgets import QApplication, QLabel, QGridLayout, QLineEdit,QWidget,QPushButton,QDesktopWidget
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont
+import ProjectPublicVariable as PPV
 
 font=QFont()
 
@@ -18,21 +19,21 @@ class MainWindow(QWidget):
         screen_resolution = QDesktopWidget().screenGeometry()
         screen_width, screen_height = screen_resolution.width(), screen_resolution.height()
 
-        self.setFixedSize(480, 800)
-        font.setPointSize(10)
+        # self.setFixedSize(480, 800)
+        # font.setPointSize(10)
         # 如果解析度為1920*1080，則全螢幕，否則使用固定解析度
-        # if screen_width == 480 and screen_height == 800:
-        #     font.setPointSize(10)
-        #     self.showFullScreen()
-        # else:
-        #     font.setPointSize(24)
-        #     self.setFixedSize(1920, 1080)
+        if screen_width == 480 and screen_height == 800:
+            font.setPointSize(10)
+            self.showFullScreen()
+        else:
+            font.setPointSize(24)
+            self.setFixedSize(1920, 1080)
 
         mainLayout = QGridLayout()
 
-        reg1={}
-        reg3={}
-        reg4={}
+        self.reg1={}
+        self.reg3={}
+        self.reg4={}
 
         reg1_title=QLabel('R1X')
         reg1_title.setFont(font)
@@ -44,7 +45,7 @@ class MainWindow(QWidget):
             if defind =='':
                 dataLabel=QLabel(defind)
             else:
-                dataLabel=QLabel('1000.00')
+                dataLabel=QLabel('NaN')
 
             defLabel.setFont(font)
             defLabel.setStyleSheet("background-color: pink;")
@@ -58,7 +59,7 @@ class MainWindow(QWidget):
             dataLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
             temp=[defind,dataLabel]
-            reg1[key]=temp
+            self.reg1[key]=temp
 
 
         reg3_title=QLabel('R3X')
@@ -71,7 +72,7 @@ class MainWindow(QWidget):
             if defind =='':
                 dataLabel=QLabel(defind)
             else:
-                dataLabel=QLabel('1000.00')
+                dataLabel=QLabel('NaN')
 
             defLabel.setFont(font)
             defLabel.setStyleSheet("background-color: lightgreen;")
@@ -85,7 +86,7 @@ class MainWindow(QWidget):
             dataLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
             temp=[defind,dataLabel]
-            reg3[key]=temp
+            self.reg3[key]=temp
 
         reg4_title=QLabel('R4X')
         reg4_title.setFont(font)
@@ -96,7 +97,7 @@ class MainWindow(QWidget):
             if defind =='':
                 dataLabel=QLabel(defind)
             else:
-                dataLabel=QLabel('1000.00')
+                dataLabel=QLabel('NaN')
                 inputBox=QLineEdit()
                 send=QPushButton('Write')
 
@@ -117,7 +118,7 @@ class MainWindow(QWidget):
             inputBox.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
             temp=[defind,dataLabel,inputBox,send]
-            reg4[key]=temp
+            self.reg4[key]=temp
 
         mainLayout.setColumnStretch(0 ,1)
         mainLayout.setColumnStretch(1 ,1)
@@ -129,7 +130,51 @@ class MainWindow(QWidget):
 
         self.setLayout(mainLayout)
 
+        # 使用 QTimer 定期更新 Modbus 數據
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.readR3x)
+        self.timer.start(1000)  # 更新頻率，每秒更新一次
+
         self.setWindowTitle('PyQt5 Modbus Multi Reg')
+
+    def readR1x(self):
+        try:
+            def read_thread():
+                try:
+                    read = PPV.instrument_1x.read_bits(0,2,functioncode=1)
+                    print(read)
+                except minimalmodbus.NoResponseError as e:
+                    print(f'(Connect Error) No response from the instrument: {e}')
+                    # self.message_text(f'(Connect Error) No response from the instrument: {e}')
+                except Exception as e:
+                    print(f'Exception: {e}')
+            # 建立一個新的執行緒並啟動
+            modbus_thread = threading.Thread(target=read_thread)
+            modbus_thread.start()
+            
+
+        except Exception as e:
+            print(f'(Reading Exception) Exception: {e}')
+            # self.message_text(f'(Reading Exception) Exception: {e}')
+    def readR3x(self):
+        try:
+            def read_thread():
+                try:
+                    read = PPV.instrument_3x.read_registers(0,20,functioncode=4)
+                    print(read)
+                except minimalmodbus.NoResponseError as e:
+                    print(f'(Connect Error) No response from the instrument: {e}')
+                    # self.message_text(f'(Connect Error) No response from the instrument: {e}')
+                except Exception as e:
+                    print(f'Exception: {e}')
+            # 建立一個新的執行緒並啟動
+            modbus_thread = threading.Thread(target=read_thread)
+            modbus_thread.start()
+            
+
+        except Exception as e:
+            print(f'(Reading Exception) Exception: {e}')
+            # self.message_text(f'(Reading Exception) Exception: {e}')
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
