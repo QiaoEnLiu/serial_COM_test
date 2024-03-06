@@ -131,9 +131,13 @@ class MainWindow(QWidget):
         self.setLayout(mainLayout)
 
         # 使用 QTimer 定期更新 Modbus 數據
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.readR3x)
-        self.timer.start(1000)  # 更新頻率，每秒更新一次
+        # self.timer = QTimer(self)
+        # self.timer.timeout.connect(self.readR3x)
+        # self.timer.start(1000)  # 更新頻率，每秒更新一次
+
+        print(self.reg1)
+        print(self.reg3)
+        print(self.reg4)
 
         self.setWindowTitle('PyQt5 Modbus Multi Reg')
 
