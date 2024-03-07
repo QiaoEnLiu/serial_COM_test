@@ -135,9 +135,9 @@ class MainWindow(QWidget):
         # self.timer.timeout.connect(self.readR3x)
         # self.timer.start(1000)  # 更新頻率，每秒更新一次
 
-        print(self.reg1)
-        print(self.reg3)
-        print(self.reg4)
+        # print(self.reg1)
+        # print(self.reg3)
+        # print(self.reg4)
 
         self.setWindowTitle('PyQt5 Modbus Multi Reg')
 
@@ -160,6 +160,7 @@ class MainWindow(QWidget):
         except Exception as e:
             print(f'(Reading Exception) Exception: {e}')
             # self.message_text(f'(Reading Exception) Exception: {e}')
+            
     def readR3x(self):
         try:
             def read_thread():
