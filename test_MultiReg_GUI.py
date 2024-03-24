@@ -190,14 +190,14 @@ class MainWindow(QWidget):
                     #endregion
 
 
-                    #region 讀取R1X
-                    r1x = PPV.instrument_ID1.read_registers(0, 1, functioncode=1)
+                    #region 讀取R1X（只要讀bit就好）
+                    r1x = PPV.instrument_ID1.read_bits(0, 1)
                     cache_R1X={}
                     for address, value in enumerate(r1x):
                         cache_R1X[address] = value
 
                     for address, value in cache_R1X.items():
-                        if value != int(PySQL.selectSQL_Reg(regDF=1, regKey=key)): # modbus值與暫存SQL不一致，將modbus值寫入暫存SQL
+                        if value != int(PySQL.selectSQL_Reg(regDF=1, regKey=address)): # modbus值與暫存SQL不一致，將modbus值寫入暫存SQL
                             PySQL.updateSQL_Reg(1, address, value)
 
                     #endregion
@@ -210,12 +210,12 @@ class MainWindow(QWidget):
 
                     r3x_16_to_20={i: None for i in range(16, 21)}
                     r3x_16_to_20_values=PPV.instrument_ID1.read_registers(min(r3x_16_to_20.keys()), len(r3x_16_to_20), 4)
-                    for i, key in enumerate(r3x_16_to_20.keys()):
-                        r3x_16_to_20[key] = r3x_16_to_20_values[i]
+                    for i, address in enumerate(r3x_16_to_20.keys()):
+                        r3x_16_to_20[address] = r3x_16_to_20_values[i]
 
                     cache_R3X={**r3x_0_to_14, **r3x_16_to_20}
                     for address, value in cache_R3X.items():
-                        if value != int(PySQL.selectSQL_Reg(regDF=3, regKey=key)): # modbus值與暫存SQL不一致，將modbus值寫入暫存SQL
+                        if value != int(PySQL.selectSQL_Reg(regDF=3, regKey=address)): # modbus值與暫存SQL不一致，將modbus值寫入暫存SQL
                             PySQL.updateSQL_Reg(3, address, value)      
 
                     #endregion
@@ -245,10 +245,10 @@ class MainWindow(QWidget):
                         # 由於離線時有更動暫存資料表，恢復連線後與modbus比對數值不一致，則將暫存資料表的值寫進modbus
                         if address == 16:
                             if PPV.instrument_ID1.read_float(address, functioncode=3) != float(PySQL.selectSQL_Reg(regDF=4, regKey=address)):
-                                PPV.instrument_ID1.write_float(address, float(PySQL.selectSQL_Reg(regDF=4, regKey=key)), functioncode=6)
+                                PPV.instrument_ID1.write_float(address, float(PySQL.selectSQL_Reg(regDF=4, regKey=address)), functioncode=6)
                         else:
                             if value != int(PySQL.selectSQL_Reg(regDF=4, regKey=address)):
-                                PPV.instrument_ID1.write_register(address, int(PySQL.selectSQL_Reg(regDF=4, regKey=key)), functioncode=6)
+                                PPV.instrument_ID1.write_register(address, int(PySQL.selectSQL_Reg(regDF=4, regKey=address)), functioncode=6)
                     #endregion
                     
                 except minimalmodbus.NoResponseError as e:
