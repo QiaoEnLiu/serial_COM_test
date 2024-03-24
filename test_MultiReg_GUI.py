@@ -1,5 +1,6 @@
-import sys, minimalmodbus, threading, PySQL
-from PyQt5.QtWidgets import QApplication, QLabel, QGridLayout, QLineEdit,QWidget,QPushButton,QDesktopWidget
+import sys, minimalmodbus, threading, PySQL, platform
+from PyQt5.QtWidgets import QApplication, QLabel, QGridLayout, QLineEdit,\
+    QWidget, QPushButton, QDesktopWidget, QMessageBox
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont
 import ProjectPublicVariable as PPV
@@ -13,6 +14,8 @@ class MainWindow(QWidget):
         self.initUI()
 
     def initUI(self):
+
+        print(platform.system())
 
         # 取得螢幕解析度
         screen_resolution = QDesktopWidget().screenGeometry()
@@ -125,6 +128,13 @@ class MainWindow(QWidget):
             temp=[defind,dataLabel,inputBox,send]
             self.reg4[key]=temp
 
+        closeButton = QPushButton('Close')
+        closeButton.clicked.connect(self.close)
+        closeButton.setFont(font)
+
+
+        mainLayout.addWidget(closeButton, 0, 5)
+
         mainLayout.setColumnStretch(0 ,1)
         mainLayout.setColumnStretch(1 ,1)
         mainLayout.setColumnStretch(2 ,1)
@@ -150,25 +160,38 @@ class MainWindow(QWidget):
         try:
             def read_thread():
                 try:
+                    r1x = PPV.instrument_ID1.read_registers(0, 1, functioncode=3)
+
+
                     # 讀取地址範圍為 0 到 15 的保持寄存器值
-                    values_0_to_15 = PPV.instrument_ID1.read_registers(0, 15, functioncode=3)
+                    r4x_0_to_15 = PPV.instrument_ID1.read_registers(0, 15, functioncode=3)
 
                     # 讀取地址範圍為 16 的浮點數值
-                    value_16 = PPV.instrument_ID1.read_float(16, functioncode=3)
+                    r4x_16 = PPV.instrument_ID1.read_float(16, functioncode=3)
 
                     # 讀取地址範圍為 18 到 26 的保持寄存器值
-                    values_18_to_26 = PPV.instrument_ID1.read_registers(18, 8, functioncode=3)
+                    r4x_18_to_26 = PPV.instrument_ID1.read_registers(18, 8, functioncode=3)
+
+                    cache_R1X={}
+                    for address, value in enumerate(r1x):
+                        cache_R1X[address] = value
+
+
 
                     # 將讀取的保持寄存器值合併為一個字典
                     cache_R4X = {}
-                    for address, value in enumerate(values_0_to_15):
+                    for address, value in enumerate(r4x_0_to_15):
                         cache_R4X[address] = value
 
                     # 將地址 16 加入字典並視為浮點數
-                    cache_R4X[16] = value_16
+                    cache_R4X[16] = r4x_16
 
-                    for address, value in enumerate(values_18_to_26, start=18):
+                    for address, value in enumerate(r4x_18_to_26, start=18):
                         cache_R4X[address] = value
+
+                    for key, value in cache_R1X.items():
+                        if value != int(PySQL.selectSQL_Reg(regDF=1, regKey=key)):
+                            PPV.instrument_ID1.write_register(key, int(PySQL.selectSQL_Reg(regDF=1, regKey=key)), functioncode=6)
 
                     # 將讀取的保持寄存器值與暫存資料表進行比對
                     for key, value in cache_R4X.items():
@@ -183,6 +206,8 @@ class MainWindow(QWidget):
                 except minimalmodbus.NoResponseError as e:
                     print(f'(Connect Error) No response from the instrument: {e}')
                     # self.message_text(f'(Connect Error) No response from the instrument: {e}')
+                except AttributeError as e: # 略過無法取得裝置變數的錯誤（因沒有埠號）
+                    pass
                 except Exception as e:
                     print(f'Exception: {e}')
             # 建立一個新的執行緒並啟動
@@ -213,6 +238,19 @@ class MainWindow(QWidget):
     #     except Exception as e:
     #         print(f'(Reading Exception) Exception: {e}')
     #         # self.message_text(f'(Reading Exception) Exception: {e}')
+            
+    #region 關閉程式警告視窗
+    def close(self):
+        # 顯示確認對話框
+        reply = QMessageBox.question(self, '程式關閉', '確定要關閉程式嗎？',
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            # 如果用戶選擇 "Yes"，則關閉應用程式
+            # response.close()
+            QApplication.quit()
+
+    #endregion
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
