@@ -190,17 +190,17 @@ class MainWindow(QWidget):
                     #endregion
 
 
-                    #region 讀取R1X（只要讀bit就好）
-                    r1x = PPV.instrument_ID1.read_bits(0, 1)
-                    cache_R1X={}
-                    for address, value in enumerate(r1x):
-                        cache_R1X[address] = value
+                    # #region 讀取R1X（只要讀bit就好）
+                    # r1x = PPV.instrument_ID1.read_bits(0, 1)
+                    # cache_R1X={}
+                    # for address, value in enumerate(r1x):
+                    #     cache_R1X[address] = value
 
-                    for address, value in cache_R1X.items():
-                        if value != int(PySQL.selectSQL_Reg(regDF=1, regKey=address)): # modbus值與暫存SQL不一致，將modbus值寫入暫存SQL
-                            PySQL.updateSQL_Reg(1, address, value)
+                    # for address, value in cache_R1X.items():
+                    #     if value != int(PySQL.selectSQL_Reg(regDF=1, regKey=address)): # modbus值與暫存SQL不一致，將modbus值寫入暫存SQL
+                    #         PySQL.updateSQL_Reg(1, address, value)
 
-                    #endregion
+                    # #endregion
 
                     #region 讀取R3X
                     r3x_0_to_14={}
@@ -215,7 +215,10 @@ class MainWindow(QWidget):
 
                     cache_R3X={**r3x_0_to_14, **r3x_16_to_20}
                     for address, value in cache_R3X.items():
-                        if value != int(PySQL.selectSQL_Reg(regDF=3, regKey=address)): # modbus值與暫存SQL不一致，將modbus值寫入暫存SQL
+                        # modbus值與暫存SQL不一致，將modbus值寫入暫存SQL
+                        if address < 16 and value != float(PySQL.selectSQL_Reg(regDF=3, regKey =address)):
+                            PySQL.updateSQL_Reg(3, address, value)
+                        if address < 16 and value != int(PySQL.selectSQL_Reg(regDF=3, regKey =address)):
                             PySQL.updateSQL_Reg(3, address, value)      
 
                     #endregion
