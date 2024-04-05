@@ -1,6 +1,6 @@
-import sys, minimalmodbus, threading, PySQL, platform
+import sys, minimalmodbus, threading, PySQL, platform, traceback
 from PyQt5.QtWidgets import QApplication, QLabel, QGridLayout, QLineEdit,\
-    QWidget, QPushButton, QDesktopWidget, QMessageBox
+    QWidget, QPushButton, QDesktopWidget, QMessageBox, QCheckBox
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont
 import ProjectPublicVariable as PPV
@@ -28,7 +28,7 @@ class MainWindow(QWidget):
             font.setPointSize(10)
             self.showFullScreen()
         else:
-            font.setPointSize(24)
+            font.setPointSize(20)
             self.setFixedSize(1920, 1080)
 
         mainLayout = QGridLayout()
@@ -43,30 +43,49 @@ class MainWindow(QWidget):
 
         reg1_title=QLabel('R1X')
         reg1_title.setFont(font)
+        reg1_act=QPushButton('Write_R1X')
+        reg1_act.setFont(font)
+        reg1_act.clicked.connect(self.sqlUpdateR1X)
         mainLayout.addWidget(reg1_title, 25, 0)
+        mainLayout.addWidget(reg1_act, 25, 2)
+        self.r1x_Checkbox={}
         for key,value in PPV.R1X_Mapping.items():
             defind=value
             defLabel=QLabel(defind)
+            activate=QCheckBox()
 
             if defind =='':
                 dataLabel=QLabel(defind)
+                
             else:
                 dataLabel=QLabel('NaN')
 
             self.r1xLabel[key]=dataLabel
+            self.r1x_Checkbox[key]=activate
 
             defLabel.setFont(font)
             defLabel.setStyleSheet("background-color: pink;")
             dataLabel.setFont(font)
             dataLabel.setStyleSheet("background-color: pink;")
+            activate.setFont(font)
+            activate.setStyleSheet("background-color: pink;")
 
             dataLabel.setText(PySQL.selectSQL_Reg(1, key))
+            if PySQL.selectSQL_Reg(1, key) == '1':
+                # self.r1x_Checkbox[key].setText("Disable")
+                self.r1x_Checkbox[key].setChecked(True)
+            else:
+                # self.r1x_Checkbox[key].setText("Enable")
+                self.r1x_Checkbox[key].setChecked(False)
 
             mainLayout.addWidget(defLabel, key + 26, 0)
             mainLayout.addWidget(dataLabel, key + 26, 1)
+            mainLayout.addWidget(activate, key + 26, 2)
 
             defLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             dataLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            # activate.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+
 
             # temp=[defind,dataLabel]
             # self.reg1[key]=temp
@@ -103,7 +122,7 @@ class MainWindow(QWidget):
 
         reg4_title=QLabel('R4X')
         reg4_title.setFont(font)
-        mainLayout.addWidget(reg4_title, 0 ,2)
+        mainLayout.addWidget(reg4_title, 0 ,3)
         
         # inputBoxes={}
         # writeBtns={}
@@ -117,13 +136,13 @@ class MainWindow(QWidget):
             else:
                 dataLabel=QLabel('NaN')
                 inputBox=QLineEdit()
-                send=QPushButton('Write')
+                send=QPushButton('Write_R4X')
                 # inputBoxes[key]=inputBox
                 # writeBtns[key]=send
 
                 dataLabel.setText(PySQL.selectSQL_Reg(4, key))
                 self.r4xLabel[key]=dataLabel
-                send.clicked.connect(lambda checked, key = key, input=inputBox: self.sqlUpdate(key ,input))
+                send.clicked.connect(lambda checked, key = key, input=inputBox: self.sqlUpdateR4X(key ,input))
 
             defLabel.setFont(font)
             defLabel.setStyleSheet("background-color: lightblue;")
@@ -134,10 +153,10 @@ class MainWindow(QWidget):
             inputBox.setFont(font)
             send.setFont(font)
 
-            mainLayout.addWidget(defLabel, key + 1, 2)
-            mainLayout.addWidget(dataLabel, key + 1, 3)
-            mainLayout.addWidget(inputBox, key + 1, 4)
-            mainLayout.addWidget(send, key + 1, 5)
+            mainLayout.addWidget(defLabel, key + 1, 3)
+            mainLayout.addWidget(dataLabel, key + 1, 4)
+            mainLayout.addWidget(inputBox, key + 1, 5)
+            mainLayout.addWidget(send, key + 1, 6)
 
             defLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             dataLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
@@ -151,7 +170,7 @@ class MainWindow(QWidget):
         closeButton.setFont(font)
 
 
-        mainLayout.addWidget(closeButton, 0, 5)
+        mainLayout.addWidget(closeButton, 0, 6)
 
         mainLayout.setColumnStretch(0 ,1)
         mainLayout.setColumnStretch(1 ,1)
@@ -175,6 +194,8 @@ class MainWindow(QWidget):
         self.setWindowTitle('PyQt5 Modbus Multi Reg')
 
     #region 
+                
+
     def modbusUpdate(self):
       
         try:
@@ -189,18 +210,22 @@ class MainWindow(QWidget):
                         dataLabel.setText(PySQL.selectSQL_Reg(4, address))
                     #endregion
 
+                    # print(PPV.instrument_ID1.read_bit(0,functioncode=1))
 
-                    # #region 讀取R1X（只要讀bit就好）
-                    # r1x = PPV.instrument_ID1.read_bits(0, 1)
-                    # cache_R1X={}
-                    # for address, value in enumerate(r1x):
-                    #     cache_R1X[address] = value
+                    #region 讀取R1X（只要讀bit就好）
+                    r1x = PPV.instrument_ID1.read_bits(0, 2, functioncode=1)
 
-                    # for address, value in cache_R1X.items():
-                    #     if value != int(PySQL.selectSQL_Reg(regDF=1, regKey=address)): # modbus值與暫存SQL不一致，將modbus值寫入暫存SQL
-                    #         PySQL.updateSQL_Reg(1, address, value)
+                    cache_R1X={}
+                    for address, value in enumerate(r1x):
+                        cache_R1X[address] = value
 
-                    # #endregion
+                    for address, value in cache_R1X.items():
+                        if value != int(PySQL.selectSQL_Reg(regDF=1, regKey=address)): # modbus值與暫存SQL不一致，將暫存SQL寫入modbus
+                            # PySQL.updateSQL_Reg(1, address, value)
+                            PPV.instrument_ID1.write_bit(address, int(PySQL.selectSQL_Reg(regDF=1, regKey=address)))
+
+
+                    #endregion
 
                     #region 讀取R3X
                     r3x_0_to_14={}
@@ -216,9 +241,9 @@ class MainWindow(QWidget):
                     cache_R3X={**r3x_0_to_14, **r3x_16_to_20}
                     for address, value in cache_R3X.items():
                         # modbus值與暫存SQL不一致，將modbus值寫入暫存SQL
-                        if address < 16 and value != float(PySQL.selectSQL_Reg(regDF=3, regKey =address)):
-                            PySQL.updateSQL_Reg(3, address, value)
-                        if address < 16 and value != int(PySQL.selectSQL_Reg(regDF=3, regKey =address)):
+                        if address < 16 and value != float(PySQL.selectSQL_Reg(regDF=3, regKey=address)): 
+                            PySQL.updateSQL_Reg(3, address, value)  
+                        if address >= 16 and value != int(PySQL.selectSQL_Reg(regDF=3, regKey=address)):
                             PySQL.updateSQL_Reg(3, address, value)      
 
                     #endregion
@@ -251,7 +276,7 @@ class MainWindow(QWidget):
                                 PPV.instrument_ID1.write_float(address, float(PySQL.selectSQL_Reg(regDF=4, regKey=address)), functioncode=6)
                         else:
                             if value != int(PySQL.selectSQL_Reg(regDF=4, regKey=address)):
-                                PPV.instrument_ID1.write_register(address, int(PySQL.selectSQL_Reg(regDF=4, regKey=address)), functioncode=6)
+                                PPV.instrument_ID1.write_register(address, int(PySQL.selectSQL_Reg(regDF=4, regKey=address)), functioncode=6) # 改成write_registers（functioncode =16）
                     #endregion
                     
                 except minimalmodbus.NoResponseError as e:
@@ -260,20 +285,33 @@ class MainWindow(QWidget):
                 except AttributeError as e: # 略過無法取得裝置變數的錯誤（因沒有埠號）
                     pass
                 except Exception as e:
-                    print(f'Exception: {e}')
+                    # print(f"An error occurred: {e}")
+                    traceback.print_exc()
+                    # print(f'Exception: {e}')
             # 建立一個新的執行緒並啟動
             modbus_thread = threading.Thread(target=read_thread)
             modbus_thread.start()
             
         except Exception as e:
-            print(f'(Reading Exception) Exception: {e}')
+            # print(f'(Reading Exception) Exception: {e}')
+            traceback.print_exc()
             # self.message_text(f'(Reading Exception) Exception: {e}')
     #endregion
 
-    def sqlUpdate(self, key, input):
+    def sqlUpdateR1X(self):
+        print('R1X_Write')
+        for address, checkBox in self.r1x_Checkbox.items():
+            if checkBox.isChecked():
+                PySQL.updateSQL_Reg(regDF=1, regKey= address, updateValue=1)
+            else:
+                PySQL.updateSQL_Reg(regDF=1, regKey= address, updateValue=0)
+        
+
+    def sqlUpdateR4X(self, key, input):
         PySQL.updateSQL_Reg(regDF=4, regKey= key, updateValue=input.text())
         # print(input.text())
-        
+
+   
             
 
             
