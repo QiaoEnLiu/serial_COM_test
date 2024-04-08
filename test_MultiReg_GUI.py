@@ -228,21 +228,24 @@ class MainWindow(QWidget):
                     #endregion
 
                     #region 讀取R3X
+                    # r3x_0_to_14_floats = PPV.instrument_ID3.read_registers(0, 16, functioncode=4)
+                    # print(f'Regs:{r3x_0_to_14_floats}')
                     r3x_0_to_14={}
                     for address in PPV.R3X_Mapping:
                         if address < 16:
-                            r3x_0_to_14[address]=PPV.instrument_ID1.read_float(address, functioncode=4)
-
+                            r3x_0_to_14[address]="{:.2f}".format(PPV.instrument_ID3.read_float(address, functioncode=4))
+                    # print(f'Reg:{r3x_0_to_14}')
                     r3x_16_to_20={i: None for i in range(16, 21)}
-                    r3x_16_to_20_values=PPV.instrument_ID1.read_registers(min(r3x_16_to_20.keys()), len(r3x_16_to_20), 4)
+                    r3x_16_to_20_values=PPV.instrument_ID3.read_registers(min(r3x_16_to_20.keys()), len(r3x_16_to_20), 4)
                     for i, address in enumerate(r3x_16_to_20.keys()):
                         r3x_16_to_20[address] = r3x_16_to_20_values[i]
 
                     cache_R3X={**r3x_0_to_14, **r3x_16_to_20}
                     for address, value in cache_R3X.items():
                         # modbus值與暫存SQL不一致，將modbus值寫入暫存SQL
-                        if address < 16 and value != float(PySQL.selectSQL_Reg(regDF=3, regKey=address)): 
-                            PySQL.updateSQL_Reg(3, address, value)  
+                        if address < 16 and value != PySQL.selectSQL_Reg(regDF=3, regKey=address): 
+                            print(f'{value}, {PySQL.selectSQL_Reg(regDF=3, regKey=address)}')
+                            PySQL.updateSQL_Reg(3, address, value)
                         if address >= 16 and value != int(PySQL.selectSQL_Reg(regDF=3, regKey=address)):
                             PySQL.updateSQL_Reg(3, address, value)      
 
@@ -305,6 +308,7 @@ class MainWindow(QWidget):
                 PySQL.updateSQL_Reg(regDF=1, regKey= address, updateValue=1)
             else:
                 PySQL.updateSQL_Reg(regDF=1, regKey= address, updateValue=0)
+                
         
 
     def sqlUpdateR4X(self, key, input):
