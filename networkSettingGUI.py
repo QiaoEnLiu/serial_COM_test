@@ -187,17 +187,39 @@ class NetworkConfig(QWidget):
             return f'設定失敗：{e}'
 
     def set_network_config_linux(self, ipv4, subnet, gateway, hostname):
-        command = f"sudo ifconfig eth0 {ipv4} netmask {subnet}"
-        gateway_command = f"sudo route add default gw {gateway}"
-        hostname_command = f"sudo hostname {hostname}"
-
         try:
+
+            # 設定IP地址和子網遮罩
+            command = f"sudo ifconfig eth0 {ipv4} netmask {subnet}"
             subprocess.run(command, check=True, shell=True)
+            
+            # 檢查網關地址是否可達
+            gateway_check_command = f"ping -c 1 -W 2 {gateway}"
+            subprocess.run(gateway_check_command, check=True, shell=True)
+            
+            # 設定預設閘道
+            gateway_command = f"sudo route add default gw {gateway}"
             subprocess.run(gateway_command, check=True, shell=True)
+            
+            # 設定有線網路主機名稱
+            hostname_command = f"sudo hostname {hostname}"
             subprocess.run(hostname_command, check=True, shell=True)
+            
+            # 更新 /etc/hosts 檔案
+            hosts_command = f"echo '127.0.1.1\t{hostname}' | sudo tee -a /etc/hosts"
+            subprocess.run(hosts_command, check=True, shell=True)
+            
+            # 更新 /etc/hostname 檔案
+            hostname_file_command = f"echo {hostname} | sudo tee /etc/hostname"
+            subprocess.run(hostname_file_command, check=True, shell=True)
+
+            
             return '設定成功'
         except subprocess.CalledProcessError as e:
             return f'設定失敗：{e}'
+    # # 切換回DHCP模式
+            # dhcp_command = "sudo dhclient -r eth0 && sudo dhclient eth0"
+            # subprocess.run(dhcp_command, check=True, shell=True)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
