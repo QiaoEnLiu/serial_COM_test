@@ -53,8 +53,14 @@ class NetworkInfo(QWidget):
             
             self.hostname_label.setText(f'主機名稱：{hostname}')
             self.ip_label.setText(f'IP地址：{ip}')
-            self.netmask_label.setText('子網路遮罩：未知')
-            self.gateway_label.setText('預設閘道：未知')
+            
+            result = subprocess.getoutput("ipconfig | findstr IPv4")
+            netmask = result.splitlines()[0].split(":")[1].strip()
+            self.netmask_label.setText(f'子網路遮罩：{netmask}')
+            
+            result = subprocess.getoutput("ipconfig | findstr Default")
+            gateway = result.splitlines()[0].split(":")[1].strip()
+            self.gateway_label.setText(f'預設閘道：{gateway}')
             
         except Exception as e:
             print(f"Error getting network info: {e}")
