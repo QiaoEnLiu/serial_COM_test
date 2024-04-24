@@ -162,7 +162,7 @@ class NetworkConfig(QWidget):
 
     def apply_set_auto_config(self):
         if platform.system() == 'Windows':
-            command = 'netsh interface ip set address name="Ethernet" source=dhcp'
+            command = 'netsh interface ip set address name="乙太網路" source=dhcp'
             subprocess.run(command, shell=True)
             self.result_label.setText('已切換為自動取得 IP (已連線)')
         elif platform.system() == 'Linux':
@@ -176,7 +176,7 @@ class NetworkConfig(QWidget):
         self.auto_button.setEnabled(True)
 
     def set_network_config_windows(self, ipv4, subnet, gateway, hostname):
-        command = f"netsh interface ip set address name='Ethernet' static {ipv4} {subnet} {gateway}"
+        command = f"netsh interface ip set address name='乙太網路' static {ipv4} {subnet} {gateway}"
         hostname_command = f"net config server /srvcomment:\"{hostname}\""
         
         try:
