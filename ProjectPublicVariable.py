@@ -3,8 +3,77 @@
 
 # 專案用全域變數、方法
 
-import minimalmodbus, platform, serial, traceback
+import minimalmodbus, platform, serial, requests, subprocess, time
 from PyQt5.QtCore import QTimer, QDateTime
+
+system_type = platform.system()
+
+#region Flask in Docker
+docker_process=None
+dockerCommand=None
+def wait_for_flask_api(timeout=30):
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            response = requests.get('http://localhost:5000/')
+            if response.status_code == 200:
+                return True
+        except requests.exceptions.ConnectionError:
+            time.sleep(1)
+    return False
+
+def start_flask_api():
+    if system_type == 'Linux':
+        dockerCommand = ['sudo','docker', 'compose', 'up', '--build']
+    else:
+        dockerCommand = ['docker', 'compose', 'up', '--build']
+    docker_process = subprocess.Popen(
+        dockerCommand, # 前面加sudo用於linux
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    if not wait_for_flask_api():
+        print("Failed to start Flask API")
+
+def stop_flask_api():
+    # if docker_process:
+    #     docker_process.terminate()
+    #     docker_process.wait()
+    if system_type == 'Linux':
+        dockerCommand = ['sudo', 'docker','compose', 'stop']
+    else:
+        dockerCommand = ['docker','compose', 'stop']
+    subprocess.run(dockerCommand) # 前面加sudo用於linux
+#endregion
+
+#region 子選單
+subMenu = {
+    '設定':{'顯示':'波形圖週期、單位',
+          '警報輸出':'Relay 1、Relay 2、Relay 3…',
+          '類比輸出':'濃度、溫度、類型',
+          '感測器溫度保護':'狀態、溫度設定',
+          '診斷':'觀看詳細數值',
+          '通訊':'RS-485、HTTP/TCPIP',
+          '時間':'調整時間、日期格式',
+          '語言':'多國語言'},
+          
+    '校正':{'感測器校正':'空氣校正、直接校正',
+          '大氣壓力校正':'大氣壓力校正',
+          '類比輸出校正':'0 - 20 mA、4 - 20 mA'},
+
+    '記錄':{'觀看記錄':'時間、數值',
+          '統計表':'最高值、平均值、最底值',
+          '下載記錄至隨身碟':'儲存格式：Excel、txt、json、csv',
+          '記錄方式設定':'自動、手動'},
+          
+    '識別':{'登入身份':'輸入密碼',
+          '儀器資訊':'型號、序號、生產日期……',
+          '感測器資訊':'型號、序號、生產日期……'}
+          }
+
+
+
+#endregion
 
 
 timer = QTimer()
@@ -20,9 +89,7 @@ it_Port=port_names[platform.system()]
 try:
     # 定義Modbus裝置的串口及地址
     # 第一個參數是串口，第二個參數是Modbus地址
-    instrument_ID1 = minimalmodbus.Instrument(it_Port, 1) # Read Only :read f=1
-    instrument_ID3 = minimalmodbus.Instrument(it_Port, 3) # Read Only :read f=3,4
-    # instrument_4x = minimalmodbus.Instrument(it_Port, 4) # Write Allow :read f=3,4; write f=6,16
+    instrument_ID1 = minimalmodbus.Instrument(it_Port, 1)
 
     # 設定串口波特率，Parity和Stop bits（這些參數需與Modbus設備一致）
     instrument_ID1.serial.baudrate = 9600
@@ -30,22 +97,16 @@ try:
     instrument_ID1.serial.stopbits = 1
     instrument_ID1.serial.timeout = 1.0
 
+    instrument_ID3 = minimalmodbus.Instrument(it_Port, 3)
+
+    # 設定串口波特率，Parity和Stop bits（這些參數需與Modbus設備一致）
     instrument_ID3.serial.baudrate = 9600
     instrument_ID3.serial.parity = minimalmodbus.serial.PARITY_NONE
     instrument_ID3.serial.stopbits = 1
     instrument_ID3.serial.timeout = 1.0
 
-    # for i in [instrument_1x, instrument_3x, instrument_4x]:
-    #     i.serial.baudrate = 9600
-    #     i.serial.parity = minimalmodbus.serial.PARITY_NONE
-    #     i.serial.stopbits = 1
-    #     i.serial.timeout = 1.0
 except serial.SerialException as e: # 略過未使用埠號、虛擬埠的錯誤
-    traceback.print_exc()
-except Exception as e:
-    traceback.print_exc()
-
-
+    pass
 
 
 #endregion
@@ -60,14 +121,61 @@ def R1X_address(searchName):
     return address
 #endregion
 
+
+#region 子功能選項
+subDisplay = {'波形圖週期':'', '單位':''} #「設定」>>「介面」
+relays = {'Relay 1':'', 'Relay 2':'', 'Relay 3':''} #「設定」>>「警報輸出」
+subAnalogy = {'類比濃度':'', '類比溫度':''} #「設定」>>「類比輸出」
+subCommunication = {'RS485':'', 'HTTP / TCPIP':''} #「設定」>>「通訊」
+subCalibrateAirManual = {"直接校正":"使用已知氧氣濃度之氣體、液體進行校正",
+                        "空氣校正":"將感測器置於空氣中校正"} #「校正」>>「感測器校正」
+#endregion
 #region R1X 地址狀態
+# relays=['Relay 1']
+
+def alarm(relay, temp, o2):
+    if relay[1]['status'][0] == '0': # 停用
+        return False
+    else: # 啟用
+        if relay[1]['status'][1] == '0': # 濃度
+            # print(f"濃度：{o2:.2f}，濃度設定值：{relay[1]['value_o2']}")
+            if relay[1]['status'][3] == '1': # 高於
+                if o2 > float(relay[1]['value_o2']):
+                    # print(f"濃度：{o2:.2f}，高於 濃度設定值：{relay[1]['value_o2']}")
+                    return True
+                else:
+                    return False
+            else: # 低於
+                if o2 < float(relay[1]['value_o2']):
+                    # print(f"濃度：{o2:.2f}，低於 濃度設定值：{relay[1]['value_o2']}")
+                    return True
+                else:
+                    return False
+            
+
+        else: # 溫度
+            # print(f"溫度：{temp:.2f}，溫度設定值：{relay[1]['value_temp']}")
+            if relay[1]['status'][3] == '1': # 高於
+                if temp > float(relay[1]['value_temp']):
+                    # print(f"溫度：{temp:.2f}，高於 溫度設定值：{relay[1]['value_temp']}")
+                    return True
+                else:
+                    return False
+            else: # 低於
+                if temp < float(relay[1]['value_temp']):
+                    # print(f"溫度：{temp:.2f}，低於 溫度設定值：{relay[1]['value_temp']}")
+                    return True
+                else:
+                    return False
+        
+
 
 #endregion
 
 #region R3X 地址名稱
-R3X_Mapping={0:'Gas', # 已實作
+R3X_Mapping={0:'Gas', # 已實作 16712 62915
 
-             2:'Temperature', # 已實作
+             2:'Temperature', # 已實作 16774 26214
 
              4:'Calibration Gas %',
 
@@ -104,14 +212,14 @@ def R3X_address(searchName):
 
 R4X_Mapping={0:'Temp unit', # 已實作
              1:'Date Formate', # 已實作
-             2:'Thermal Limit',
-             3:'Thermal cut off',
+             2:'Thermal Limit', # 已實作
+             3:'Thermal cut off', # 已實作
              4:'Set Gas Unit', # 已實作
              5:'Set Alarm flg0',
              6:'Set Alarm flg1',
              7:'Set Alarm flg NoSens',
              8:'Set Alarm flg Thermal',
-             9:'set baudrate',
+             9:'set baudrate', # 已實作
              10:'set ct range',
              11:'set CT1',
              12:'Set CT2',
@@ -120,8 +228,8 @@ R4X_Mapping={0:'Temp unit', # 已實作
              15:'Member',
              16:'Set Pressur',
              
-             18:'set CT1_1',
-             19:'Set CT2_1',
+             18:'set CT1_1', # 已實作
+             19:'Set CT2_1', # 已實作
              20:'AD-CT1-Low',
              21:'AD-CT1-High',
              22:'AD-CT2-Low',
@@ -132,7 +240,6 @@ R4X_Mapping={0:'Temp unit', # 已實作
              }
 
 
-
 def R4X_address(searchName):
     address= next((key for key, value in R4X_Mapping.items() if value == searchName), None)
     return address
@@ -141,13 +248,18 @@ def R4X_address(searchName):
 
 #region R4X 地址數值狀態
 
+#region 'Temp unit'
 tempUnitDist={0:'°C',
               1:'°F'}
+#endregion
 
+#region 'Date Formate'
 dateFormat={0:["EU","dd-MM-yyyy"],
             1:["USA","MM-dd-yyyy"],
             2:["ISO","yyyy-MM-dd"]} #大寫M為月份，小寫m為分鐘
+#endregion
 
+#region 'Set Gas Unit'
 o2_GasUnitDist={0:'ppb',
                 1:'PPM',
                 2:'mg/l',
@@ -158,9 +270,9 @@ o2_GasUnitDist={0:'ppb',
                 7:'ppb',
                 8:'PPMV',
                 9:'kPa'}
+#endregion
 
-
-#region RS-485狀態 'set baudrate'
+#region 'set baudrate' (RS-485)
 
 # |-8     |-7     |-6   |-5   |-4|-3|-2|-1       |
 # |Byte                                          |
@@ -205,34 +317,85 @@ stopBit={'1':'0',
 # |DataBit|
 dataBit={'7':'0',
          '8':'1'}
-
-def get_keys_from_value(dictionary, target_value):
-    return [key for key, value in dictionary.items() if value == target_value]
-
 #endregion
 
-
-
-
+#region 'set ct range'
+ct_range={1:'4-20mA',
+          2:'0-20mA',
+          3:'5-20mA'}
 #endregion
 
+#region Member
+actCO2_Insensitivity={0:"停用",
+                      1:"啟用"}
 
+diaphragm={0:"90952",
+           1:"90956",
+           2:"90958",
+           3:"90935"}
+#endregion
 
-# 將二進位轉換為十進位（可接受只由0及1組成的字串）
+#region 'set CT1_1', 'Set CT2_1', 'AD-CT1-Low', 'AD-CT1-High', 'AD-CT2-Low', 'AD-CT2-High',
+current_Min = 0
+current_Max = 4095
+#endregion
+
+#region 進制轉換 'set baudrate', 'Calibratile set', 'configure set'
+# 將二進制轉換為十進制（可接受只由0及1組成的字串）
 def b2d(binary): # binary to decimal
     decimal = int(binary, 2)
     return decimal
 
-# 將十進位轉換為二進位
+# 將十進制轉換為二進制
 def d2b(decimal): # decimal to binary
     binary = bin(decimal)[2:]
     return binary
 
+#endregion
+
+#endregion
+
+#region 由值找索引（唯一值）
+def get_keys_from_value(dictionary, target_value):
+    return [key for key, value in dictionary.items() if value == target_value]
+
+def fromValueFindKey(d, target_value):
+    for key, value in d.items():
+        if value == target_value:
+            return key
+    return None
+#endregion
+
 #region 圖表區域
-plotTime='10秒' # 圖表週期
+plotTime = None # 圖表週期
+plotTimeDict = {1:'5秒',
+                2:'10秒',
+                3:'15秒'}
+# ['1分','5分','10分','30分','1小時']
 #endregion
 
 
 #region 使用者
 presentUser = None
 #endregion
+
+#region 語言
+languageName=None
+languages={1:"中文",
+           2:"英文",
+           3:"德文",
+           4:"法文",
+           5:"日文",
+           }
+#endregion
+
+autoManual=None
+setAutoManual={0:"手動",
+               1:"自動"}
+
+IPS={"IPv4": [],"子網路遮罩":[],"預設閘道":[],"主機名稱":""}
+
+def cidr_to_netmask(cidr):
+    # 轉換CIDR表示法到子網遮罩IP
+    mask = (0xffffffff >> (32 - cidr)) << (32 - cidr)
+    return '.'.join([str((mask >> i) & 0xff) for i in [24, 16, 8, 0]])
