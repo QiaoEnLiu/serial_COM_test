@@ -1,6 +1,8 @@
 # SQL
 
 import sqlite3
+# import ProjectPublicVariable as PPV
+# from datetime import datetime
 
 db_path = 'SentrakSQL/SentrakSQL.db'
 regDFs={1: 'R1X',
@@ -12,6 +14,8 @@ IPS={"User":"",
      "Subnet Mask":"",
      "Default Gateway":"",
      "Hostname":""}
+startDay=" 00:00:00"
+endDay=" 23:59:59"
 
 #region 連接資料庫
 def execute_query(query, params=()):
@@ -119,9 +123,25 @@ def insertSQL_R3X_Record_Test2(r3xRecordTuple):
         print(r3xRecordTuple)
 
 def selectR3XDates(startDate, endDate):
-        startDate += ' 00:00:00'
-        endDate += ' 23:59:59'
-        query = "SELECT * FROM R3X_Record_Test2 WHERE times BETWEEN ? AND ?"
+        # startDate_ISO = datetime.strptime(startDate, PPV.dateFormat[2][1])
+        # startDate_USA = datetime.strptime(startDate, PPV.dateFormat[1][1])
+        # startDate_EU = datetime.strptime(startDate, PPV.dateFormat[0][1])
+
+        # endDate_ISO = datetime.strptime(endDate, PPV.dateFormat[2][1])
+        # endDate_USA = datetime.strptime(endDate, PPV.dateFormat[1][1])
+        # endDate_EU = datetime.strptime(endDate, PPV.dateFormat[0][1])
+
+        # startDate_ISO += startDay
+        # startDate_USA += startDay
+        # startDate_EU += startDay
+
+        # endDate_ISO += endDay
+        # endDate_USA += endDay
+        # endDate_EU += endDay
+
+        startDate += startDay
+        endDate += endDay
+        query = "SELECT * FROM R3X_Record_Test2 WHERE times BETWEEN ? AND ?" # R3X_Record_Test2為測式用的資料表
         result = execute_query_R3XRecord(query, (startDate, endDate,))
         return result if result else None 
 #endregion

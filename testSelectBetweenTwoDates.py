@@ -1,9 +1,9 @@
 import PySQL
-import ProjectPublicVariable as PPV
+# import ProjectPublicVariable as PPV
 
 from flask import Flask, jsonify
 
-dateFormat=PPV.dateFormat[int(PySQL.selectSQL_Reg(4, 1))][1] # ISO
+# dateFormat=PPV.dateFormat[int(PySQL.selectSQL_Reg(4, 1))][1] # ISO
 
 startDate = '2024-06-25'
 endDate = '2024-07-10'
